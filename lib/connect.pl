@@ -4,6 +4,7 @@ use GPS::MTK::Constants qw/:commands/;
 use GPS::MTK;
 use Data::Dumper;
 
+# Figure out which serial port we're trying to use...
 my $comm_port_fpath;
 for ( '/dev/ttyUSB0', '/dev/ttyACM0' ) {
     next unless -e $_;
@@ -11,15 +12,16 @@ for ( '/dev/ttyUSB0', '/dev/ttyACM0' ) {
 }
 $comm_port_fpath or die "No comm ports found!";
 
-my $comm = GPS::MTK->new( comm_port_fpath => $comm_port_fpath );
-$comm->connect;
-$comm->logger_download;
-my $metadata = $comm->gps_metadata;
+# Then let's create the object that will handle our data
+my $device = GPS::MTK->connect( comm_port_fpath => $comm_port_fpath );
 
+# Download the data
+$device->logger_download;
+
+# Save the retrieved data
+my $metadata = $device->gps_metadata;
 open F, ">data.dump";
 binmode F;
 print F ${$metadata->{logger}{data}};
 close F;
-
-use Data::Dumper; warn Dumper $metadata;
 

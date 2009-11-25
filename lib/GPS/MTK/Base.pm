@@ -296,5 +296,23 @@ sub AUTOLOAD {
 
 }
 
+####################################################
+# Object instantiation code
+####################################################
+
+sub object_load {
+# --------------------------------------------------
+# Load the appropriate package and attempt to initialize
+# the object as well
+#
+    my $self         = shift;
+    my $object_class = shift;
+    return unless $object_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
+    eval "require $object_class; 1" or die $@;
+    my $object      = $object_class->new($self);
+    return $object;
+}
+
+
 1;
 

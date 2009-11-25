@@ -5,8 +5,8 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME              => 'GPS::MTK',
     VERSION_FROM      => 'lib/GPS/MTK.pm', # finds $VERSION
+    ABSTRACT          => 'Handles the proprietary extensions on MTK chipset based GPS receivers',
     PREREQ_PM         => {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/GPS/MTK.pm', # retrieve abstract from module
-       AUTHOR         => 'Aki MImoto <aki@>') : ()),
+      ( AUTHOR         => 'Aki Mimoto <aki-cpan@bako.ca>') : ()),
 );
