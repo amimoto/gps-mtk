@@ -52,7 +52,21 @@ sub device_retarget {
 # the moment where the object is "reblessed" into
 # its correct class
 #
-    return 1;
+    my $pkg                 = shift;
+    my $device_obj_original = shift;
+
+    my $self = $pkg->new(@_);
+
+    while ( my ( $k, $v ) = each %$device_obj_original ) {
+
+# Import all only fields starting with _ (excepting the command_obj)
+        next unless $k =~ /^_/;
+        next if     $k =~ /^_(command)/;
+
+        $self->{$k} = $v;
+    }
+
+    return $self;
 }
 
 sub device_specs {
@@ -87,23 +101,6 @@ sub device_class_identify {
 ####################################################
 # The core interface functions
 ####################################################
-
-sub new {
-# --------------------------------------------------
-# Let's load/init the record
-#
-    my $self = shift;
-    $self = $self->SUPER::new(@_);
-
-# Let's immediately initialize the IO connection
-    $self->io_obj;
-
-# Let's ask the GPS what sort it is
-    my $gps_info = $self->gps_info;
-
-    return $self;
-}
-
 
 sub connected {
 # --------------------------------------------------
@@ -200,7 +197,7 @@ sub logger_download {
     my $metadata = $self->gps_metadata;
     $logger_state = $metadata->{logger};
 
-    my $decoder_obj = $self->decode_obj;
+    my $decoder_obj = $self->decoder_obj;
     my $parsed = $decoder_obj->parse( $logger_state->{data}, $opts );
 
     return { 
@@ -421,48 +418,6 @@ sub gps_metadata {
     return $handler_obj->{metadata};
 }
 
-
-####################################################
-# Object instantiation code
-####################################################
-
-sub handler_obj {
-# --------------------------------------------------
-    my $self = shift;
-    return $self->{handler_obj} ||= do {
-        my $handler_class = $self->{handler_class};
-        return unless $handler_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
-        eval "require $handler_class; 1" or die $@;
-        my $handler_obj = $handler_class->new($self);
-        $handler_obj;
-    };
-}
-
-
-sub command_obj {
-# --------------------------------------------------
-    my $self = shift;
-    return $self->{command_obj} ||= do {
-        my $command_class = $self->{command_class};
-        return unless $command_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
-        eval "require $command_class";
-        my $command_obj = $command_class->new($self);
-        $command_obj;
-    };
-}
-
-sub decoder_obj {
-# --------------------------------------------------
-    my $self = shift;
-    return $self->{decoder_obj} ||= do {
-        my $decoder_class = $self->{decoder_class};
-        return unless $decoder_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
-        eval "require $decoder_class; 1" or die $@;
-        my $decoder_obj = $decoder_class->new($self);
-        $decoder_obj;
-    };
-}
-
 sub nmea_string_log {
 # --------------------------------------------------
 # Log a single NMEA string to the output file
@@ -476,10 +431,52 @@ sub nmea_string_log {
     close $fh;
 }
 
+
+####################################################
+# Object instantiation code
+####################################################
+
+sub handler_obj {
+# --------------------------------------------------
+    my $self = shift;
+    return $self->{_handler_obj} ||= do {
+        my $handler_class = $self->{handler_class};
+        return unless $handler_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
+        eval "require $handler_class; 1" or die $@;
+        my $handler_obj = $handler_class->new($self);
+        $handler_obj;
+    };
+}
+
+
+sub command_obj {
+# --------------------------------------------------
+    my $self = shift;
+    return $self->{_command_obj} ||= do {
+        my $command_class = $self->{command_class};
+        return unless $command_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
+        eval "require $command_class";
+        my $command_obj = $command_class->new($self->{specs});
+        $command_obj;
+    };
+}
+
+sub decoder_obj {
+# --------------------------------------------------
+    my $self = shift;
+    return $self->{_decoder_obj} ||= do {
+        my $decoder_class = $self->{decoder_class};
+        return unless $decoder_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
+        eval "require $decoder_class; 1" or die $@;
+        my $decoder_obj = $decoder_class->new($self);
+        $decoder_obj;
+    };
+}
+
 sub io_obj {
 # --------------------------------------------------
     my $self = shift;
-    return $self->{io_obj} ||= do {
+    return $self->{_io_obj} ||= do {
         my $io_class = $self->{io_class};
         return unless $io_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
         eval "require $io_class";
@@ -488,6 +485,7 @@ sub io_obj {
         $io_obj;
     };
 }
+
 
 
 1;

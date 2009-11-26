@@ -309,7 +309,7 @@ sub object_load {
     my $object_class = shift;
     return unless $object_class =~ /^\w+(?:::\w+)*$/; # TODO ERROR MESSAGE
     eval "require $object_class; 1" or die $@;
-    my $object      = $object_class->new($self);
+    my $object      = $object_class->new(@_);
     return $object;
 }
 

@@ -16,12 +16,17 @@ $comm_port_fpath or die "No comm ports found!";
 my $device = GPS::MTK->connect( comm_port_fpath => $comm_port_fpath );
 
 # Download the data
-$device->logger_download;
+my $logger_data = $device->logger_download;
 
 # Save the retrieved data
 my $metadata = $device->gps_metadata;
 open F, ">data.dump";
 binmode F;
 print F ${$metadata->{logger}{data}};
+close F;
+
+open F, ">data.gpx";
+binmode F;
+print F Dumper( $logger_data );
 close F;
 

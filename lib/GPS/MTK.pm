@@ -52,8 +52,8 @@ sub connect {
 # the the device object into the proper object type. This does cause
 # problems with initialization code... however, this means we won't throw
 # away our existing objects such as the IO connection
-        $device_obj = bless $device_obj, $device_class_new;
-        $device_obj->device_retarget(@_) or return;
+        eval "require $device_class_new; 1" or die $@;
+        $device_obj = $device_class_new->device_retarget($device_obj => @_) or return;
 
     } # /MTK_CHECK
 
