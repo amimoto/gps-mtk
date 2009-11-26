@@ -25,7 +25,15 @@ sub parse_cleanup {
         my $j              = $i+1;
         my $track          = $tracks->[$i];
         my $track_metadata = {};
-        my $headers        = shift @$track;
+        my $headers        = $track->{headers};
+        my $name           = '';
+        if ( my $utc = $track->{utc} ) {
+            my @z = gmtime $utc;
+            $z[4] ++;
+            $z[5] += 1900;
+            $name = sprintf qq`%04i-%02i-%02iT%02i:%02i:%02iZ`, reverse @z[0..5];
+        }
+
         my $gpx_track      = qq`<?xml version="1.0"?>
 <gpx
 version="1.0"
@@ -35,13 +43,13 @@ xmlns="http://www.topografix.com/GPX/1/0"
 xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd">
 
 <trk>
-<name><![CDATA[]]></name>
+<name><![CDATA[$name]]></name>
 <desc><![CDATA[]]></desc>
 <number>$j</number>
 <trkseg>
 
 `;
-        for my $point ( @$track ) {
+        for my $point ( @{$track->{points}} ) {
             my $entry_info = {};
             @$entry_info{@$headers} = @$point;
             $gpx_track .= qq`<trkpt lat="$entry_info->{latitude}" lon="$entry_info->{longitude}">`;
@@ -59,11 +67,8 @@ xsi:schemaLocation="http://www.topografix.com/GPX/1/0 http://www.topografix.com/
 </gpx>
 
 `;
-        $track_metadata->{gpx} = $gpx_track;
-        push @gpx_tracks, $track_metadata;
+        $track->{gpx} = $gpx_track;
     }
-
-    $state->{tracks} = \@gpx_tracks;
 
     return $state;
 }

@@ -100,7 +100,10 @@ sub log_separator_handler {
 
 # We'll just add a new track trace to the stack
     my $tracks  = $state->{tracks} ||= [];
-    my $current = $state->{current}  = [[@{$header_info->{log_format_elements}}]];
+    my $current = $state->{current}  = {
+        headers => [@{$header_info->{log_format_elements}}],
+        points  => [],
+    };
     push @$tracks, $current;
 
     return $state;
@@ -109,7 +112,15 @@ sub log_separator_handler {
 sub log_entry_handler {
 # --------------------------------------------------
     my ( $self, $state, $entry_info, $header_info ) = @_;
-    push @{$state->{current}}, [@$entry_info{@{$header_info->{log_format_elements}}}];
+    my $current = $state->{current};
+
+    if ( not $current->{start_date} and $entry_info->{utc} ) {
+        $current->{utc} = $entry_info->{utc};
+    }
+
+    push @{$current->{points}}, [
+        @$entry_info{@{$header_info->{log_format_elements}}}
+    ];
 }
 
 ###################################################
