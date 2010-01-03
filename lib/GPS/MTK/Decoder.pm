@@ -7,6 +7,7 @@ use GPS::MTK;
 use GPS::MTK::Constants qw/:all/;
 use GPS::MTK::Base
     MTK_ATTRIBS => {
+        track_interval_split => 60*60,
     };
 
 ###################################################

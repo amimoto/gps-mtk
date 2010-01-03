@@ -6,7 +6,7 @@ use Data::Dumper;
 
 # Figure out which serial port we're trying to use...
 my $comm_port_fpath;
-for ( '/dev/ttyUSB0', '/dev/ttyACM0' ) {
+for ( '/dev/ttyUSB0', '/dev/ttyACM0', '/dev/rfcomm3' ) {
     next unless -e $_;
     $comm_port_fpath = $_;
 }

@@ -34,6 +34,8 @@ sub connect {
 # We haven't identified the GPS yet. Let's see if we can figure it out
 # =========================================================
     MTK_CHECK: {
+        last if $device_obj->{probe_skip};
+
 # Only if this unit is a MTK type that responds to the
 # test sequence do we continue on
         $device_obj->gps_send_wait(PMTK_TEST,PMTK_ACK) or last;

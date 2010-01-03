@@ -70,7 +70,6 @@ sub line_get {
             } while ( $n == 0 );
             $l .= $ch;
         } while ( $ch ne "\n" );
-
     }
     else {
         ($n,$l) = $io_handle->read(1);

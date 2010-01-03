@@ -1,11 +1,10 @@
 package GPS::MTK::Device;
 
 use strict;
-use GPS::MTK::Constants qw/ :commands /;
+use GPS::MTK::Constants qw/ $DEBUG :commands /;
 use GPS::MTK::Utils::NMEA;
 use GPS::MTK::Base
     MTK_ATTRIBS => {
-        debug              => 1,
 
 # Override to handle the individual parameters for the GPS
         specs => {
@@ -33,6 +32,9 @@ use GPS::MTK::Base
         io_timeout         => 4,
         io_send_reattempts => 3,
         io_blocking        => 1,
+
+# Initialization actions
+        probe_skip         => 0,
 
 # Some internal variables to track state
         _gps_type          => 'NONMTK',
@@ -163,6 +165,8 @@ sub logger_download {
     my $mem_index      = 0;
     my $mem_chunk_size = $logger_specs->{chunk_size};
     my $mem_used       = $logger_state->{memory_used};
+    my $mem_limit      = $mem_used > $mem_chunk_size ? $mem_chunk_size  : $mem_used;
+    die $mem_limit;
 
 # We load a handler onto the PMTK so we can intercept the data
 #    my $hook_id = $handler_obj->event_hook();
@@ -173,7 +177,7 @@ sub logger_download {
 # Let's get the amount of memory left (or the portion thereof, up to
 # $mem_chunk_size)
         my $mem_chunk = $mem_used - $mem_index;
-        if ( $mem_chunk > $mem_chunk_size ) { $mem_chunk = $mem_chunk_size };
+        if ( $mem_chunk > $mem_limit ) { $mem_chunk = $mem_limit };
 
 # This sends the actual request
         $self->gps_send(PMTK_LOG_REQ_DATA,$mem_index,$mem_chunk_size) or die "FIXME: Request failed. Oops";
@@ -225,13 +229,14 @@ sub loop {
 # We need to propate down the blocking setting...
     $io_obj->blocking($self->{blocking});
     my $l = $io_obj->line_get or return;
-    $self->{debug} and warn $l;
+    $DEBUG and warn $l;
 
 # Log the nmea string
     $self->nmea_string_log($l);
 
 # We have a line, let's act upon it.
     my $handler_obj = $self->handler_obj or return;
+
     return $handler_obj->handle($l);
 }
 
@@ -284,9 +289,9 @@ sub gps_send {
     my $handler_obj = $self->handler_obj or return;
     my $code        = shift @elements;
     my $nmea_string = $command_obj->command_string(uc($code), @elements);
-    $self->{debug} and print "S:$nmea_string\n";
+    $DEBUG and print "S:$nmea_string\n";
 
-    $self->nmea_string_log( "SEND: $nmea_string" );
+    $self->nmea_string_log( "S:$nmea_string" );
     my $io_obj      = $self->io_obj or return;
     return $io_obj->line_put($nmea_string) or die $!;
 }
@@ -371,7 +376,8 @@ sub gps_send_wait {
             next;
         }
         else {
-            die "Could not receive response <$code_wait> desired";
+            $! = "Could not receive response <$code_wait> desired";
+            return;
         }
     };
     return 1;

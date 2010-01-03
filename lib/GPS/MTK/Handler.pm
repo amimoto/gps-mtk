@@ -12,7 +12,6 @@ use GPS::MTK::Base
         checksum_level   => NMEA_CHECKSUM_STRICT,
         event_hook_count => 0,
         event_hooks      => {},
-        debug            => 0,
     };
 
 sub handle {
@@ -56,7 +55,7 @@ sub handle {
 # At this point, we want to pass off the action to the appropriate
 # handler.
     @e or return;
-    my $verb = lc shift @e;
+    my $verb = uc shift @e;
     $self->dispatch($verb,@e);
 
 # At this point we can handle user-events
@@ -95,6 +94,7 @@ sub handle {
         else { next } # not matched
     }
 
+    return 1;
 }
 
 sub dispatch {
@@ -105,7 +105,7 @@ sub dispatch {
     my $verb = uc(shift||'') or return;
     my @args = @_;
 
-    $self->{debug} and print "R:".join(",",$verb,@args)."\n";
+    $DEBUG and print "R:".join(",",$verb,@args)."\n";
 
 # GPGGA : Fixed Data
     my $state = $self->state;
